@@ -20,26 +20,28 @@ pipeline {
       }
     }
     stage('Static Code Analysis') {
-      environment {
-        JAVA_HOME = "/usr/lib/jvm/java-17-openjdk-amd64"
-        PATH = "${JAVA_HOME}/bin:$PATH"
+        environment {
         SONAR_URL = "http://18.141.12.146:9000"
-      }
-      steps {
-        withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
-          dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') {
-            sh '''
-              echo "JAVA_HOME is set to: $JAVA_HOME"
-              echo "Java version:"
-              java -version
-              echo "Javac version:"
-              javac -version
-              mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=$SONAR_URL
-            '''
-          }
-        }
+    }
+        steps {
+            withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+                dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') {
+                    sh '''
+                    # Discover JAVA_HOME dynamically inside container
+                     JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+                    export JAVA_HOME
+                     echo "Using JAVA_HOME: $JAVA_HOME"
+                     java -version
+                    javac -version
+
+                    mvn sonar:sonar \
+                     -Dsonar.login=$SONAR_AUTH_TOKEN \
+                        -Dsonar.host.url=$SONAR_URL
+                 '''
       }
     }
+  }
+}
 
 //     stage('Build and Push Docker Image') {
 //       environment {

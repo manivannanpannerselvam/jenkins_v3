@@ -20,25 +20,29 @@ pipeline {
       }
     }
 stage('Static Code Analysis') {
-    agent {
-        docker {
-            image 'maven:3.8.6-jdk-17'  // Ensures Java 17 environment
-            args '-v $HOME/.m2:/root/.m2'  // Preserves Maven cache
-        }
-    }
     environment {
-        SONAR_URL = "http://18.141.12.146:9000"
+        // Direct path to Java 17 (verify this path exists on your Jenkins agent)
+        JAVA_HOME = "/usr/lib/jvm/java-17-openjdk-amd64"
+        PATH = "${JAVA_HOME}/bin:${env.PATH}"
     }
     steps {
-        withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
-            dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') {
-                sh """
-                    mvn sonar:sonar \
-                        -Dsonar.login=$SONAR_AUTH_TOKEN \
-                        -Dsonar.host.url=${SONAR_URL} \
-                        -Dsonar.java.jdkHome=/usr/local/openjdk-17 \
-                        -Dsonar.projectVersion=1.0
-                """
+        script {
+            // Verify Java version
+            sh '''
+                echo "Java Version:"
+                java -version
+                echo "Java Home: $JAVA_HOME"
+            '''
+
+            withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+                dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') {
+                    sh """
+                        mvn sonar:sonar \
+                            -Dsonar.login=$SONAR_AUTH_TOKEN \
+                            -Dsonar.host.url=http://18.139.110.167:9000 \
+                            -Dsonar.java.jdkHome=${JAVA_HOME}
+                    """
+                }
             }
         }
     }

@@ -1,8 +1,8 @@
 pipeline {
   agent {
     docker {
-      image 'abhishekf5/maven-abhishek-docker-agent:v1'
-      args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+      image 'maven:3.9.6-eclipse-temurin-17'
+      args '--user root'
     }
   }
   stages {
@@ -19,33 +19,18 @@ pipeline {
         sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'
       }
     }
-stage('Static Code Analysis') {
-    environment {
-        // Direct path to Java 17 (verify this path exists on your Jenkins agent)
-        JAVA_HOME = "/usr/lib/jvm/java-17-openjdk-amd64"
-        PATH = "${JAVA_HOME}/bin:${env.PATH}"
-    }
-    steps {
-        script {
-            // Verify Java version
-            sh '''
-                echo "Java Version:"
-                java -version
-                echo "Java Home: $JAVA_HOME"
-            '''
-
+    stage('Static Code Analysis') {
+        steps {
             withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
-                dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') {
-                    sh """
-                        mvn sonar:sonar \
-                            -Dsonar.login=$SONAR_AUTH_TOKEN \
-                            -Dsonar.host.url=http://18.139.110.167:9000 \
-                            -Dsonar.java.jdkHome=${JAVA_HOME}
-                    """
-                }
-            }
-        }
+            dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') {
+             sh '''
+                echo "Using Java version:"
+                java -version
+                mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=$SONAR_URL
+        '''
+      }
     }
+  }
 }
 
 //     stage('Build and Push Docker Image') {

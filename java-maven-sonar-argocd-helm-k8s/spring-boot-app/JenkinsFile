@@ -19,37 +19,16 @@ pipeline {
         sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'
       }
     }
-//     stage('Static Code Analysis') {
-//         environment {
-//             SONAR_URL = "http://18.139.110.167:9000"
-//             // Ensure JDK 17 is configured in Jenkins Global Tools
-//             JAVA_HOME = "${tool 'jdk17'}"
-//             PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
-//         }
-//         steps {
-//             script {
-//                 // Verify Java version before analysis
-//                 sh '''
-//                     echo "Using Java:"
-//                     java -version
-//                     echo "Java home: $JAVA_HOME"
-//                 '''
-//
-//                 withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
-//                     dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') {
-//                         sh """
-//                             mvn sonar:sonar \
-//                                 -Dsonar.login=$SONAR_AUTH_TOKEN \
-//                                 -Dsonar.host.url=${SONAR_URL} \
-//                                 -Dsonar.java.jdkHome=${JAVA_HOME} \
-//                                 -Dsonar.projectVersion=1.0 \
-//                                 -Dsonar.sourceEncoding=UTF-8
-//                         """
-//                     }
-//                 }
-//             }
-//         }
-//     }
+   stage('Static Code Analysis') {
+      environment {
+        SONAR_URL = "http://18.141.12.146:9000"
+      }
+      steps {
+        withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+          sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
+        }
+      }
+    }
 //     stage('Build and Push Docker Image') {
 //       environment {
 //         DOCKER_IMAGE = "abhishekf5/ultimate-cicd:${BUILD_NUMBER}"

@@ -36,6 +36,19 @@ pipeline {
         }
       }
     }
+    stage('Maven Build') {
+          agent {
+            docker {
+              image 'maven:3.9.6-eclipse-temurin-17'
+              args '--user root'
+            }
+          }
+          steps {
+            dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') {
+              sh 'mvn clean package -DskipTests'
+            }
+          }
+        }
 
     stage('Build and Push Docker Image') {
       agent any

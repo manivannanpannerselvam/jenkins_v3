@@ -1,14 +1,12 @@
 pipeline {
-  agent none  // Important: Disable global agent since we use per-stage agents
+  agent none  // Disable global agent since we use per-stage agents
 
   environment {
     DOCKER_IMAGE = "manivannan238/ultimate-cicd:${BUILD_NUMBER}"
-//     REGISTRY_CREDENTIALS = credentials('docker-cred')
     SONAR_URL = "http://54.255.136.137:9000"
   }
 
   stages {
-
     stage('Checkout') {
       agent any
       steps {
@@ -36,19 +34,20 @@ pipeline {
         }
       }
     }
+
     stage('Maven Build') {
-          agent {
-            docker {
-              image 'maven:3.9.6-eclipse-temurin-17'
-              args '--user root'
-            }
-          }
-          steps {
-            dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') {
-              sh 'mvn clean package -DskipTests'
-            }
-          }
+      agent {
+        docker {
+          image 'maven:3.9.6-eclipse-temurin-17'
+          args '--user root'
         }
+      }
+      steps {
+        dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') {
+          sh 'mvn clean package -DskipTests'
+        }
+      }
+    }
 
     stage('Build and Push Docker Image') {
       agent any
@@ -67,27 +66,25 @@ pipeline {
         }
       }
     }
+
     stage('Update Deployment File') {
-          environment {
-              GIT_REPO_NAME = "jenkins_v3"
-              GIT_USER_NAME = "manivannanpannerselvam"
-          }
-          steps {
-              withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-                  sh '''
-                      git config user.email "manipinnai238@gmail.com"
-                      git config user.name "manivannanpannerselvam"
-                      BUILD_NUMBER=${BUILD_NUMBER}
-                      sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-                      git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-                      git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                      git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
-                  '''
-              }
-          }
+      environment {
+        GIT_REPO_NAME = "jenkins_v3"
+        GIT_USER_NAME = "manivannanpannerselvam"
+      }
+      steps {
+        withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+          sh '''
+            git config user.email "manipinnai238@gmail.com"
+            git config user.name "manivannanpannerselvam"
+            sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+            git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+            git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+            git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+          '''
+        }
       }
     }
-  }
   }
 }
 

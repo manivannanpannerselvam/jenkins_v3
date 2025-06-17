@@ -1,5 +1,5 @@
 pipeline {
-  agent none  // Disable global agent since we use per-stage agents
+  agent any  // Disable global agent since we use per-stage agents
 
   environment {
     DOCKER_IMAGE = "manivannan238/ultimate-cicd:${BUILD_NUMBER}"
